@@ -71,10 +71,8 @@ func main() {
 
 	api := app.ApiHandle{DB: db, Watcher: watcher}
 
-	// 定义一个路由处理函数
-	e.GET("/", func(c echo.Context) error {
-		return c.String(http.StatusOK, "Hello, World!")
-	})
+	e.Static("/", "dist")
+	e.File("/", "dist/index.html")
 
 	e.POST("/api/login", api.Login)
 
