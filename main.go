@@ -9,6 +9,7 @@ import (
 	"github.com/fsnotify/fsnotify"
 	echojwt "github.com/labstack/echo-jwt/v4"
 	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 	"github.com/mymmrac/telego"
 	"github.com/spf13/viper"
 )
@@ -18,6 +19,10 @@ func main() {
 	db := app.InitDB()
 
 	e := echo.New()
+	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
+		AllowOrigins: []string{"*"},
+		AllowMethods: []string{http.MethodGet, http.MethodPut, http.MethodPost, http.MethodDelete},
+	}))
 
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
@@ -80,8 +85,14 @@ func main() {
 		// ...
 	}))
 
-	auth.POST("/api/medias", api.CreateMedia)
+	auth.POST("/api/media", api.CreateMedia)
+	auth.GET("/api/media", api.ListMedia)
+	auth.PUT("/api/media/:id", api.UpdateMedia)
+	auth.DELETE("/api/media/:id", api.DeleteMedia)
 	auth.POST("/api/monitorDirs", api.CreateMonitorDir)
+	auth.GET("/api/monitorDirs", api.ListMonitorDir)
+	auth.PUT("/api/monitorDirs/:id", api.UpdateMonitorDir)
+	auth.DELETE("/api/monitorDirs/:id", api.DeleteMonitorDir)
 
 	// 启动服务器
 	e.Start(":" + viper.GetString("PORT"))

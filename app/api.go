@@ -44,7 +44,7 @@ func (h *ApiHandle) Login(c echo.Context) error {
 
 	// Set custom claims
 	claims := &jwtCustomClaims{
-		"Jon Snow",
+		viper.GetString("USER"),
 		true,
 		jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour * time.Duration(viper.GetInt("LoginDuration")))),
@@ -55,7 +55,7 @@ func (h *ApiHandle) Login(c echo.Context) error {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
 	// Generate encoded token and send it as response.
-	t, err := token.SignedString([]byte("secret"))
+	t, err := token.SignedString([]byte(viper.GetString("USER")))
 	if err != nil {
 		return err
 	}
@@ -154,7 +154,12 @@ func (h *ApiHandle) UpdateMonitorDir(c echo.Context) error {
 
 func (h *ApiHandle) ListMonitorDir(c echo.Context) error {
 	var monitorDir []MonitorDir
-	h.DB.Find(&monitorDir)
+	orm := h.DB
+	mediaID := c.QueryParam("mediaId")
+	if mediaID != "" {
+		orm = orm.Where("media_id = ?", mediaID)
+	}
+	orm.Find(&monitorDir)
 
 	return c.JSON(http.StatusOK, map[string]any{"success": true, "data": monitorDir})
 }
