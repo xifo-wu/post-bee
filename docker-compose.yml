@@ -1,0 +1,13 @@
+#
+
+version: '3.8'
+
+services:
+  app:
+    image: xifowu/post-bee:latest
+    restart: always
+    ports:
+      - "127.0.0.1:9887:9887"
+    volumes:
+      - ./test/:/test
+      - ./config.yaml:/workdir/config.yaml

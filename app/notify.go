@@ -24,7 +24,29 @@ func isVideoFile(fileName string) bool {
 	return false
 }
 
-func NotifyCreat(db *gorm.DB, path string, bot *telego.Bot) {
+func NotifyCreat(db *gorm.DB, path string) {
+	dir := filepath.Dir(path)
+
+	var monitorDir MonitorDir
+
+	db.Preload("Media").Where("dir = ?", dir).First(&monitorDir)
+
+	if monitorDir.ID == 0 {
+		return
+	}
+
+	// 如果任务已经存在且状态为0，则不创建新的任务
+	var monitorDirCount int64
+	db.Where("dir = ? AND status = ?", path, 0).Count(&monitorDirCount)
+	if monitorDirCount != 0 {
+		return
+	}
+
+	// 创建一条新的带处理任务
+	db.Create(&NotificationTask{Dir: path, Status: 0, MonitorDirID: monitorDir.ID})
+}
+
+func NotifyTelegram(db *gorm.DB, path string, bot *telego.Bot) {
 	log.Println("创建事件：", path)
 	// 获取文件名
 	filename := filepath.Base(path)

@@ -3,6 +3,9 @@ package app
 import (
 	"log"
 	"net/http"
+	"os"
+	"os/exec"
+	"path/filepath"
 	"strconv"
 	"sync"
 	"time"
@@ -128,9 +131,25 @@ func (h *ApiHandle) CreateMonitorDir(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, map[string]any{"success": false, "error": "创建失败"})
 	}
 
-	err = h.Watcher.Add(monitorDir.Dir)
+	// err = h.Watcher.Add(monitorDir.Dir)
+	// if err != nil {
+	// 	log.Println(monitorDir.Dir, "无法添加路径到监视器:", err)
+	// }
+	exec.Command("ls " + monitorDir.Dir)
+	err = filepath.Walk(monitorDir.Dir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if info.IsDir() {
+			err = h.Watcher.Add(path)
+			if err != nil {
+				log.Println("无法添加路径到监视器:", err)
+			}
+		}
+		return nil
+	})
 	if err != nil {
-		log.Println(monitorDir.Dir, "无法添加路径到监视器:", err)
+		log.Println(err, "??????")
 	}
 	return c.JSON(http.StatusOK, map[string]any{"success": true, "data": monitorDir})
 }

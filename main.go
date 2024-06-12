@@ -11,6 +11,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/mymmrac/telego"
+	"github.com/robfig/cron/v3"
 	"github.com/spf13/viper"
 )
 
@@ -57,7 +58,9 @@ func main() {
 						watcher.Add(event.Name)
 						return
 					}
-					app.NotifyCreat(db, event.Name, bot)
+
+					log.Println("创建文件：", event.Name)
+					app.NotifyCreat(db, event.Name)
 				}
 
 			case err, ok := <-watcher.Errors:
@@ -71,6 +74,11 @@ func main() {
 
 	api := app.ApiHandle{DB: db, Watcher: watcher}
 
+	scheduleHandle := app.Schedule{DB: db, Bot: bot}
+	crontab := cron.New()
+	crontab.AddFunc("* * * * *", scheduleHandle.Notify)
+	crontab.Start()
+
 	e.Static("/", "dist")
 	e.File("/", "dist/index.html")
 
@@ -78,9 +86,7 @@ func main() {
 
 	auth := e.Group("")
 	auth.Use(echojwt.WithConfig(echojwt.Config{
-		// ...
 		SigningKey: []byte(viper.GetString("USER")),
-		// ...
 	}))
 
 	auth.POST("/api/media", api.CreateMedia)
